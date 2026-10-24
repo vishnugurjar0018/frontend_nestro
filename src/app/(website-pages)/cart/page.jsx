@@ -114,7 +114,7 @@ export default function CartPage() {
                 return (
                     total +
                     salePrice *
-                        quantity
+                    quantity
                 );
 
             },
@@ -158,11 +158,11 @@ export default function CartPage() {
                         ? explicitOriginal
                         : discountPercent > 0
                             ? Math.round(
-                                  salePrice /
-                                      (1 -
-                                          discountPercent /
-                                              100)
-                              )
+                                salePrice /
+                                (1 -
+                                    discountPercent /
+                                    100)
+                            )
                             : salePrice;
 
                 const quantity =
@@ -174,7 +174,7 @@ export default function CartPage() {
                 return (
                     total +
                     originalPrice *
-                        quantity
+                    quantity
                 );
 
             },
@@ -185,7 +185,7 @@ export default function CartPage() {
     const discount =
         Math.max(
             originalTotal -
-                subtotal,
+            subtotal,
             0
         );
 
@@ -196,7 +196,7 @@ export default function CartPage() {
 
     const shipping =
         subtotal >=
-        FREE_SHIPPING_LIMIT
+            FREE_SHIPPING_LIMIT
             ? 0
             : subtotal > 0
                 ? 199
@@ -219,7 +219,7 @@ export default function CartPage() {
     const remainingForFreeShipping =
         Math.max(
             FREE_SHIPPING_LIMIT -
-                subtotal,
+            subtotal,
             0
         );
 
@@ -230,7 +230,7 @@ export default function CartPage() {
                 subtotal /
                 FREE_SHIPPING_LIMIT
             ) *
-                100,
+            100,
             100
         );
 
@@ -767,12 +767,12 @@ export default function CartPage() {
 
                                     const category =
                                         typeof item.categoryID ===
-                                        "object"
+                                            "object"
                                             ? item
                                                 .categoryID
                                                 ?.name
                                             : item.category ||
-                                              "";
+                                            "";
 
                                     const image =
                                         item.thumbnail ||
@@ -819,13 +819,13 @@ export default function CartPage() {
                                         explicitOriginalPrice > 0
                                             ? explicitOriginalPrice
                                             : discountPercentFromData > 0 &&
-                                              salePrice > 0
+                                                salePrice > 0
                                                 ? Math.round(
-                                                      salePrice /
-                                                          (1 -
-                                                              discountPercentFromData /
-                                                                  100)
-                                                  )
+                                                    salePrice /
+                                                    (1 -
+                                                        discountPercentFromData /
+                                                        100)
+                                                )
                                                 : salePrice;
 
                                     const quantity =
@@ -837,7 +837,7 @@ export default function CartPage() {
                                     const itemDiscount =
                                         Math.max(
                                             originalPrice -
-                                                salePrice,
+                                            salePrice,
                                             0
                                         );
 
@@ -845,13 +845,13 @@ export default function CartPage() {
                                         originalPrice > salePrice
                                             ? discountPercentFromData > 0
                                                 ? Math.round(
-                                                      discountPercentFromData
-                                                  )
+                                                    discountPercentFromData
+                                                )
                                                 : Math.round(
-                                                      (itemDiscount /
-                                                          originalPrice) *
-                                                          100
-                                                  )
+                                                    (itemDiscount /
+                                                        originalPrice) *
+                                                    100
+                                                )
                                             : 0;
 
                                     return (
@@ -1432,7 +1432,7 @@ export default function CartPage() {
                                             "
                                         >
                                             {shipping ===
-                                            0
+                                                0
                                                 ? "FREE"
                                                 : formatPrice(
                                                     shipping
@@ -1511,40 +1511,36 @@ export default function CartPage() {
                                 </div>
 
 
-                                {/* CHECKOUT BUTTON */}
 
+                                {/* CHECKOUT BUTTON */}
                                 <Link
-                                    href="/checkout"
+                                    href="/sign-in?redirect=%2Fcheckout"
                                     className="
-                                        mt-7
-                                        flex
-                                        h-13
-                                        w-full
-                                        items-center
-                                        justify-center
-                                        rounded-xl
-                                        bg-[#c18a5d]
-                                        px-5
-                                        text-sm
-                                        font-semibold
-                                        text-white
-                                        transition
-                                        hover:bg-[#d09a6b]
-                                        hover:shadow-lg
-                                    "
+        mt-7
+        flex
+        h-13
+        w-full
+        items-center
+        justify-center
+        rounded-xl
+        bg-[#c18a5d]
+        px-5
+        text-sm
+        font-semibold
+        text-white
+        transition
+        hover:bg-[#d09a6b]
+        hover:shadow-lg
+    "
                                 >
                                     Proceed to Checkout
-
-                                    <span
-                                        className="
-                                            ml-2
-                                            text-base
-                                        "
-                                    >
+                                    <span className="ml-2 text-base">
                                         →
                                     </span>
-
                                 </Link>
+
+
+
 
 
                                 {/* SECURITY */}

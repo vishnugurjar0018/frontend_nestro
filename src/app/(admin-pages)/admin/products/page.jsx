@@ -54,42 +54,44 @@ export default function ProductsPage() {
     // GET PRODUCTS
     // =====================================================
 
-    const fetchProducts = async () => {
+  
+const fetchProducts = async () => {
+    try {
+        setLoading(true);
 
-        try {
+        const response = await axios.get(API_URL);
 
-            setLoading(true);
+        console.log("PRODUCT API RESPONSE:", response.data);
 
-            const response = await axios.get(API_URL);
+        if (response.data.success) {
+            const productData = response.data.data;
 
-            if (response.data.success) {
+            // Handle both array and object-based API responses
+            const productList = Array.isArray(productData)
+                ? productData
+                : Array.isArray(productData?.products)
+                    ? productData.products
+                    : [];
 
-                setProducts(response.data.data || []);
-
-            } else {
-
-                toast.error(
-                    response.data.message || "Unable to fetch products"
-                );
-
-            }
-
-        } catch (error) {
-
-            console.log("PRODUCT FETCH ERROR:", error);
-
+            setProducts(productList);
+        } else {
+            setProducts([]);
             toast.error(
-                error.response?.data?.message ||
-                "Failed to load products"
+                response.data.message || "Unable to fetch products"
             );
-
-        } finally {
-
-            setLoading(false);
-
         }
+    } catch (error) {
+        console.log("PRODUCT FETCH ERROR:", error);
+        setProducts([]);
 
-    };
+        toast.error(
+            error.response?.data?.message ||
+            "Failed to load products"
+        );
+    } finally {
+        setLoading(false);
+    }
+};
 
 
     useEffect(() => {
