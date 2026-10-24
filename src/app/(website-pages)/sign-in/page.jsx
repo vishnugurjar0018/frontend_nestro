@@ -3,15 +3,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import axios from "axios";
-import { Eye, EyeOff, LockKeyhole, Mail, ArrowRight } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  ArrowRight,
+} from "lucide-react";
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function SignInPage() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,34 +23,83 @@ export default function SignInPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("SIGN IN FORM SUBMITTED");
+
     setError("");
+
+    if (!API_BASE_URL) {
+      setError(
+        "API URL is missing. Check your frontend .env.local file."
+      );
+      console.error("NEXT_PUBLIC_API_BASE_URL is missing");
+      return;
+    }
+
+    const apiUrl = `${API_BASE_URL.replace(/\/+$/, "")}/auth/login`;
+
+    console.log("Login API URL:", apiUrl);
+
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      console.log("Sending login request...");
+
       const response = await axios.post(
-        API_URL,
-        { email: email.trim(), password },
-        { withCredentials: true }
+        apiUrl,
+        {
+          email: email.trim().toLowerCase(),
+          password,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      if (response.data?.success) {
-        // Accept only a local relative path for redirect.
-        const params = new URLSearchParams(window.location.search);
-        const requestedPath = params.get("redirect") || "/checkout";
-        const safePath =
-          requestedPath.startsWith("/") &&
-          !requestedPath.startsWith("//")
-            ? requestedPath
-            : "/checkout";
+      console.log("Login response status:", response.status);
+      console.log("Login successful:", response.data?.success);
 
-        router.replace(safePath);
-      } else {
-        setError(response.data?.message || "Unable to sign in.");
+      if (!response.data?.success) {
+        setError(
+          response.data?.message || "Unable to sign in."
+        );
+        return;
       }
+
+      // Preserve the destination requested before login.
+      const params = new URLSearchParams(window.location.search);
+      const requestedPath = params.get("redirect") || "/checkout";
+
+      // Allow only safe local paths.
+      const safePath =
+        requestedPath.startsWith("/") &&
+        !requestedPath.startsWith("//") &&
+        !requestedPath.includes("\\")
+          ? requestedPath
+          : "/checkout";
+
+      console.log("Redirecting to:", safePath);
+
+      // Navigate after the login response has been received.
+      window.location.assign(safePath);
     } catch (err) {
+      console.error("SIGN IN ERROR:", err);
+      console.error("Login status:", err.response?.status);
+      console.error("Login response:", err.response?.data);
+
       setError(
         err.response?.data?.message ||
-          "Sign in failed. Please check your details and try again."
+          (err.response
+            ? `Sign in failed (${err.response.status}). Please check your details.`
+            : "Cannot connect to the server. Check that your backend is running.")
       );
     } finally {
       setLoading(false);
@@ -73,9 +125,11 @@ export default function SignInPage() {
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-[#d8ad88]">
               Welcome to Nestro
             </p>
+
             <h1 className="max-w-sm text-4xl font-medium leading-tight sm:text-5xl">
               Make yourself at home.
             </h1>
+
             <p className="mt-5 max-w-sm text-sm leading-7 text-white/70">
               Thoughtfully designed furniture for the spaces and moments
               that matter most.
@@ -93,14 +147,20 @@ export default function SignInPage() {
             <p className="text-sm font-medium text-[#a66e43]">
               YOUR NESTRO ACCOUNT
             </p>
+
             <h2 className="mt-3 text-3xl font-semibold text-[#30231d]">
               Sign in
             </h2>
+
             <p className="mt-2 text-sm leading-6 text-gray-500">
               Welcome back. Enter your details to continue.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <form
+              onSubmit={handleSubmit}
+              className="mt-8 space-y-5"
+            >
+              {/* Email */}
               <div>
                 <label
                   htmlFor="email"
@@ -108,10 +168,16 @@ export default function SignInPage() {
                 >
                   Email address
                 </label>
+
                 <div className="flex h-12 items-center gap-3 rounded-xl border border-[#e8ded5] px-4 focus-within:border-[#a66e43]">
-                  <Mail size={18} className="text-gray-400" />
+                  <Mail
+                    size={18}
+                    className="shrink-0 text-gray-400"
+                  />
+
                   <input
                     id="email"
+                    name="email"
                     type="email"
                     autoComplete="email"
                     required
@@ -123,6 +189,7 @@ export default function SignInPage() {
                 </div>
               </div>
 
+              {/* Password */}
               <div>
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <label
@@ -131,6 +198,7 @@ export default function SignInPage() {
                   >
                     Password
                   </label>
+
                   <Link
                     href="/forgot-password"
                     className="text-xs font-medium text-[#a66e43] hover:underline"
@@ -140,9 +208,14 @@ export default function SignInPage() {
                 </div>
 
                 <div className="flex h-12 items-center gap-3 rounded-xl border border-[#e8ded5] px-4 focus-within:border-[#a66e43]">
-                  <LockKeyhole size={18} className="text-gray-400" />
+                  <LockKeyhole
+                    size={18}
+                    className="shrink-0 text-gray-400"
+                  />
+
                   <input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     required
@@ -151,29 +224,44 @@ export default function SignInPage() {
                     placeholder="Enter your password"
                     className="h-full w-full bg-transparent text-sm outline-none"
                   />
+
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="text-gray-400 hover:text-[#a66e43]"
+                    onClick={() =>
+                      setShowPassword((previous) => !previous)
+                    }
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="shrink-0 text-gray-400 hover:text-[#a66e43]"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </div>
               </div>
 
+              {/* Error */}
               {error && (
-                <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-600"
+                >
                   {error}
                 </p>
               )}
 
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={loading}
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#38261e] px-4 font-semibold text-white transition hover:bg-[#50372b] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign In"}
+
                 {!loading && <ArrowRight size={18} />}
               </button>
             </form>

@@ -17,37 +17,44 @@ export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [authChecked, setAuthChecked] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const pathname = usePathname();
     const router = useRouter();
 
-    // Check login status using backend
+    const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL;
+
+    // Check login status from backend
     useEffect(() => {
         let cancelled = false;
 
         const checkLogin = async () => {
-            setAuthChecked(false);
-
             try {
-                const baseURL =
-                    process.env.NEXT_PUBLIC_API_BASE_URL;
-
-                if (!baseURL) {
-                    throw new Error("API base URL is missing");
+                if (!API_BASE_URL) {
+                    setIsLoggedIn(false);
+                    return;
                 }
 
                 const response = await fetch(
-                    `${baseURL}/auth/me`,
+                    `${API_BASE_URL}/auth/me`,
                     {
                         method: "GET",
                         credentials: "include",
                         headers: {
                             Accept: "application/json",
                         },
+                        cache: "no-store",
                     }
                 );
 
-                const data = await response.json();
+                let data = {};
+
+                try {
+                    data = await response.json();
+                } catch {
+                    data = {};
+                }
 
                 if (!cancelled) {
                     setIsLoggedIn(
@@ -67,12 +74,13 @@ export default function Header() {
             }
         };
 
+        setAuthChecked(false);
         checkLogin();
 
         return () => {
             cancelled = true;
         };
-    }, [pathname]);
+    }, [pathname, API_BASE_URL]);
 
     const closeMenu = () => {
         setMenuOpen(false);
@@ -126,17 +134,60 @@ export default function Header() {
         }
     `;
 
-    // Profile icon click
+    // Profile icon:
+    // Logged in -> Profile
+    // Not logged in -> Sign In
     const handleProfileClick = () => {
         if (!authChecked) return;
 
         closeMenu();
 
-        router.push(
-            isLoggedIn
-                ? "/profile"
-                : `/sign-in?redirect=${encodeURIComponent("/profile")}`
-        );
+        if (isLoggedIn) {
+            router.push("/profile");
+        } else {
+            // Do not send profile as the post-login redirect.
+            router.push("/sign-in");
+        }
+    };
+
+    // Logout
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        setIsLoggingOut(true);
+
+        try {
+            if (!API_BASE_URL) {
+                throw new Error("API base URL is missing.");
+            }
+
+            const response = await fetch(
+                `${API_BASE_URL}/auth/logout`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Logout failed.");
+            }
+
+            setIsLoggedIn(false);
+            closeMenu();
+
+            // Go to home after logout
+            router.push("/");
+            router.refresh();
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert("Logout nahi ho paya. Please dobara try karein.");
+        } finally {
+            setIsLoggingOut(false);
+        }
     };
 
     const navLinks = [
@@ -145,7 +196,6 @@ export default function Header() {
         { href: "/about", label: "About" },
         { href: "/contact", label: "Contact" },
         { href: "/checkout", label: "Checkout" },
-        { href: "/sign-in", label: "Sign In" },
         { href: "/new-design", label: "New Design" },
     ];
 
@@ -199,6 +249,32 @@ export default function Header() {
                             {item.label}
                         </Link>
                     ))}
+
+                    {/* Sign In when logged out, Logout when logged in */}
+                    {isLoggedIn ? (
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="
+                                inline-flex min-h-[44px] items-center
+                                justify-center rounded-lg px-[11px]
+                                text-[14px] font-normal text-[#687080]
+                                transition-colors hover:text-[#9a633b]
+                                disabled:opacity-50
+                                xl:px-[15px] xl:text-[15px]
+                            "
+                        >
+                            {isLoggingOut ? "Logging out..." : "Logout"}
+                        </button>
+                    ) : (
+                        <Link
+                            href="/sign-in"
+                            className={desktopNavClass("/sign-in")}
+                        >
+                            Sign In
+                        </Link>
+                    )}
                 </nav>
 
                 {/* Right actions */}
@@ -270,7 +346,7 @@ export default function Header() {
                         )}
                     </Link>
 
-                    {/* Profile */}
+                    {/* Profile icon */}
                     <button
                         type="button"
                         onClick={handleProfileClick}
@@ -327,16 +403,12 @@ export default function Header() {
                     min-[951px]:hidden
                     ${
                         menuOpen
-                            ? "max-h-[500px] opacity-100"
+                            ? "max-h-[550px] opacity-100"
                             : "max-h-0 border-t-transparent opacity-0"
                     }
                 `}
             >
-                <nav
-                    className="
-                        flex flex-col gap-1 px-4 pb-4 pt-2
-                    "
-                >
+                <nav className="flex flex-col gap-1 px-4 pb-4 pt-2">
                     {navLinks.map((item) => (
                         <Link
                             key={item.href}
@@ -347,6 +419,41 @@ export default function Header() {
                             {item.label}
                         </Link>
                     ))}
+
+                    {isLoggedIn ? (
+                        <>
+                            <Link
+                                href="/profile"
+                                onClick={closeMenu}
+                                className={mobileNavClass("/profile")}
+                            >
+                                My Profile
+                            </Link>
+
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                disabled={isLoggingOut}
+                                className="
+                                    flex min-h-[46px] w-full items-center
+                                    rounded-lg px-4 text-left text-[15px]
+                                    text-[#596170] transition-colors
+                                    hover:bg-[#faf7f2] hover:text-[#9a633b]
+                                    disabled:opacity-50
+                                "
+                            >
+                                {isLoggingOut ? "Logging out..." : "Logout"}
+                            </button>
+                        </>
+                    ) : (
+                        <Link
+                            href="/sign-in"
+                            onClick={closeMenu}
+                            className={mobileNavClass("/sign-in")}
+                        >
+                            Sign In
+                        </Link>
+                    )}
                 </nav>
             </div>
         </header>
