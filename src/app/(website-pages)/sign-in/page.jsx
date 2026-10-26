@@ -23,33 +23,24 @@ export default function SignInPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log("SIGN IN FORM SUBMITTED");
-
     setError("");
 
     if (!API_BASE_URL) {
-      setError(
-        "API URL is missing. Check your frontend .env.local file."
-      );
+      setError("API URL is missing. Please check your environment variables.");
       console.error("NEXT_PUBLIC_API_BASE_URL is missing");
       return;
     }
-
-    const apiUrl = `${API_BASE_URL.replace(/\/+$/, "")}/auth/login`;
-
-    console.log("Login API URL:", apiUrl);
 
     if (!email.trim() || !password) {
       setError("Please enter your email and password.");
       return;
     }
 
+    const apiUrl = `${API_BASE_URL.replace(/\/+$/, "")}/auth/login`;
+
     setLoading(true);
 
     try {
-      console.log("Sending login request...");
-
       const response = await axios.post(
         apiUrl,
         {
@@ -64,21 +55,14 @@ export default function SignInPage() {
         }
       );
 
-      console.log("Login response status:", response.status);
-      console.log("Login successful:", response.data?.success);
-
       if (!response.data?.success) {
-        setError(
-          response.data?.message || "Unable to sign in."
-        );
+        setError(response.data?.message || "Unable to sign in.");
         return;
       }
 
-      // Preserve the destination requested before login.
       const params = new URLSearchParams(window.location.search);
       const requestedPath = params.get("redirect") || "/checkout";
 
-      // Allow only safe local paths.
       const safePath =
         requestedPath.startsWith("/") &&
         !requestedPath.startsWith("//") &&
@@ -86,9 +70,6 @@ export default function SignInPage() {
           ? requestedPath
           : "/checkout";
 
-      console.log("Redirecting to:", safePath);
-
-      // Navigate after the login response has been received.
       window.location.assign(safePath);
     } catch (err) {
       console.error("SIGN IN ERROR:", err);
@@ -99,7 +80,7 @@ export default function SignInPage() {
         err.response?.data?.message ||
           (err.response
             ? `Sign in failed (${err.response.status}). Please check your details.`
-            : "Cannot connect to the server. Check that your backend is running.")
+            : "Cannot connect to the server. Check your backend URL and connection.")
       );
     } finally {
       setLoading(false);
@@ -156,10 +137,7 @@ export default function SignInPage() {
               Welcome back. Enter your details to continue.
             </p>
 
-            <form
-              onSubmit={handleSubmit}
-              className="mt-8 space-y-5"
-            >
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {/* Email */}
               <div>
                 <label
@@ -169,7 +147,7 @@ export default function SignInPage() {
                   Email address
                 </label>
 
-                <div className="flex h-12 items-center gap-3 rounded-xl border border-[#e8ded5] px-4 focus-within:border-[#a66e43]">
+                <div className="flex h-12 items-center gap-3 rounded-xl border border-[#e8ded5] px-4 transition focus-within:border-[#a66e43]">
                   <Mail
                     size={18}
                     className="shrink-0 text-gray-400"
@@ -184,7 +162,7 @@ export default function SignInPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="h-full w-full bg-transparent text-sm outline-none"
+                    className="h-full w-full bg-transparent text-sm font-medium text-[#30231d] placeholder:text-gray-400 outline-none"
                   />
                 </div>
               </div>
@@ -207,7 +185,7 @@ export default function SignInPage() {
                   </Link>
                 </div>
 
-                <div className="flex h-12 items-center gap-3 rounded-xl border border-[#e8ded5] px-4 focus-within:border-[#a66e43]">
+                <div className="flex h-12 items-center gap-3 rounded-xl border border-[#e8ded5] px-4 transition focus-within:border-[#a66e43]">
                   <LockKeyhole
                     size={18}
                     className="shrink-0 text-gray-400"
@@ -222,7 +200,7 @@ export default function SignInPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="h-full w-full bg-transparent text-sm outline-none"
+                    className="h-full w-full bg-transparent text-sm font-medium text-[#30231d] placeholder:text-gray-400 outline-none"
                   />
 
                   <button
@@ -233,7 +211,7 @@ export default function SignInPage() {
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
-                    className="shrink-0 text-gray-400 hover:text-[#a66e43]"
+                    className="shrink-0 text-gray-500 hover:text-[#a66e43]"
                   >
                     {showPassword ? (
                       <EyeOff size={18} />
@@ -261,7 +239,6 @@ export default function SignInPage() {
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#38261e] px-4 font-semibold text-white transition hover:bg-[#50372b] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign In"}
-
                 {!loading && <ArrowRight size={18} />}
               </button>
             </form>
